@@ -1,7 +1,8 @@
 import graphene
 from .graphql_types import PersonType
-from .neo4j_connection import get_driver
+from .neo4j_connection import get_session
 import uuid
+
 
 class CreatePerson(graphene.Mutation):
     class Arguments:
@@ -13,10 +14,12 @@ class CreatePerson(graphene.Mutation):
 
     person = graphene.Field(PersonType)
 
-    def mutate(root, info, first_name, last_name, gender, birth_date=None, death_date=None):
+    def mutate(
+        root, info, first_name, last_name, gender, birth_date=None, death_date=None
+    ):
         person_id = str(uuid.uuid4())
-        driver = get_driver()
-        with driver.session() as session:
+        session = get_session()
+        with session:
             result = session.run(
                 """
                 CREATE (p:Person {
@@ -33,11 +36,12 @@ class CreatePerson(graphene.Mutation):
                 last_name=last_name,
                 gender=gender,
                 birth_date=birth_date,
-                death_date=death_date
+                death_date=death_date,
             )
             record = result.single()
-            person = PersonType.from_node(record['p'])
+            person = PersonType.from_node(record["p"])
         return CreatePerson(person=person)
+
 
 class CreateParentRelationship(graphene.Mutation):
     class Arguments:
@@ -47,17 +51,18 @@ class CreateParentRelationship(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(root, info, parent_id, child_id):
-        driver = get_driver()
-        with driver.session() as session:
+        session = get_session()
+        with session:
             session.run(
                 """
                 MATCH (parent:Person {id: $parent_id}), (child:Person {id: $child_id})
                 CREATE (parent)-[:PARENT]->(child)
                 """,
                 parent_id=parent_id,
-                child_id=child_id
+                child_id=child_id,
             )
         return CreateParentRelationship(ok=True)
+
 
 class CreateMarriedRelationship(graphene.Mutation):
     class Arguments:
@@ -69,8 +74,8 @@ class CreateMarriedRelationship(graphene.Mutation):
     ok = graphene.Boolean()
 
     def mutate(root, info, person1_id, person2_id, since, status):
-        driver = get_driver()
-        with driver.session() as session:
+        session = get_session()
+        with session:
             session.run(
                 """
                 MATCH (p1:Person {id: $person1_id}), (p2:Person {id: $person2_id})
@@ -80,12 +85,12 @@ class CreateMarriedRelationship(graphene.Mutation):
                 person1_id=person1_id,
                 person2_id=person2_id,
                 since=since,
-                status=status
+                status=status,
             )
         return CreateMarriedRelationship(ok=True)
+
 
 class Mutation(graphene.ObjectType):
     create_person = CreatePerson.Field()
     create_parent_relationship = CreateParentRelationship.Field()
     create_married_relationship = CreateMarriedRelationship.Field()
-
