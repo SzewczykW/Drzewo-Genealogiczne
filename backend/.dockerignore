@@ -1,0 +1,8 @@
+# Ignore everything
+**
+
+# Except these files ...
+!*.py
+!genealogy_tree
+!genealogy_tree_conf
+!requirements.txt
