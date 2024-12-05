@@ -9,68 +9,78 @@ class PersonType(graphene.ObjectType):
     birth_date = graphene.String()
     death_date = graphene.String()
     gender = graphene.String()
-    parents = graphene.List(lambda: PersonType)
+    mother = graphene.Field(lambda: PersonType)
+    father = graphene.Field(lambda: PersonType)
     children = graphene.List(lambda: PersonType)
-    spouses = graphene.List(lambda: PersonType)
+    spouse = graphene.Field(lambda: PersonType)
     siblings = graphene.List(lambda: PersonType)
 
-    @staticmethod
-    def from_node(node):
-        return PersonType(
-            id=node["id"],
-            first_name=node["first_name"],
-            last_name=node["last_name"],
-            birth_date=node.get("birth_date"),
-            death_date=node.get("death_date"),
-            gender=node["gender"],
-        )
-
-    @staticmethod
-    def from_tree_node(data):
-        return PersonType(
-            id=data.get("_id"),
-            first_name=data.get("first_name"),
-            last_name=data.get("last_name"),
-            birth_date=data.get("birth_date"),
-            death_date=data.get("death_date"),
-            gender=data.get("gender"),
-            children=[
-                PersonType.from_tree_node(child) for child in data.get("_children", [])
-            ],
-        )
-
-    def resolve_parents(parent, info):
+    def resolve_mother(parent, info):
         session = get_session()
         with session:
             result = session.run(
-                "MATCH (p:Person)<-[:PARENT]-(parent:Person) WHERE p.id = $id RETURN parent",
+                """
+                MATCH (parent:Person {gender: 'Female'})-[:PARENT]->(child:Person {id: $id})
+                RETURN parent
+                """,
                 id=parent.id,
             )
-            return [PersonType.from_node(record["parent"]) for record in result]
+            record = result.single()
+            if record:
+                return PersonType(**record["parent"])
+            return None
+
+    def resolve_father(parent, info):
+        session = get_session()
+        with session:
+            result = session.run(
+                """
+                MATCH (parent:Person {gender: 'Male'})-[:PARENT]->(child:Person {id: $id})
+                RETURN parent
+                """,
+                id=parent.id,
+            )
+            record = result.single()
+            if record:
+                return PersonType(**record["parent"])
+            return None
 
     def resolve_children(parent, info):
         session = get_session()
         with session:
             result = session.run(
-                "MATCH (p:Person)-[:PARENT]->(child:Person) WHERE p.id = $id RETURN child",
+                """
+                MATCH (parent:Person {id: $id})-[:PARENT]->(child:Person)
+                RETURN child
+                """,
                 id=parent.id,
             )
-            return [PersonType.from_node(record["child"]) for record in result]
+            return [PersonType(**record["child"]) for record in result]
 
-    def resolve_spouses(parent, info):
+    def resolve_spouse(parent, info):
         session = get_session()
         with session:
             result = session.run(
-                "MATCH (p:Person)-[:MARRIED]->(spouse:Person) WHERE p.id = $id RETURN spouse",
+                """
+                MATCH (p:Person {id: $id})-[:MARRIED]-(spouse:Person)
+                RETURN spouse
+                """,
                 id=parent.id,
             )
-            return [PersonType.from_node(record["spouse"]) for record in result]
+            record = result.single()
+            if record:
+                return PersonType(**record["spouse"])
+            return None
 
     def resolve_siblings(parent, info):
         session = get_session()
         with session:
             result = session.run(
-                "MATCH (p:Person)-[:SIBLING]->(sibling:Person) WHERE p.id = $id RETURN sibling",
+                """
+                MATCH (p:Person {id: $id})<-[:PARENT]-(commonParent:Person)-[:PARENT]->(sibling:Person)
+                WHERE sibling.id <> $id
+                RETURN DISTINCT sibling
+                """,
                 id=parent.id,
             )
-            return [PersonType.from_node(record["sibling"]) for record in result]
+            return [PersonType(**record["sibling"]) for record in result]
