@@ -8,7 +8,7 @@ CREATE
   (mary:Person {id: randomUUID(), first_name: 'Mary', last_name: 'Lewandowska', gender: 'Female', birth_date: '1952-02-02'}),
   (peter:Person {id: randomUUID(), first_name: 'Peter', last_name: 'Lewandowski', gender: 'Male', birth_date: '1955-03-03'}),
   (susan:Person {id: randomUUID(), first_name: 'Susan', last_name: 'Lewandowska', gender: 'Female', birth_date: '1980-05-05'}),
-  (linda:Person {id: randomUUID(), first_name: 'Linda', last_name: 'Nowak-Lewandowska', gender: 'Female', birth_date: '1977-04-04'}),
+  (linda:Person {id: randomUUID(), first_name: 'Linda', last_name: 'Lewandowska', gender: 'Female', birth_date: '1977-04-04'}),
   (james:Person {id: randomUUID(), first_name: 'James', last_name: 'Lewandowski', gender: 'Male', birth_date: '1982-06-06'}),
   (robert:Person {id: randomUUID(), first_name: 'Robert', last_name: 'Lewandowski', gender: 'Male', birth_date: '1985-12-12'}),
   (nancy:Person {id: randomUUID(), first_name: 'Nancy', last_name: 'Nowak-Lewandowska', gender: 'Female', birth_date: '1987-01-13'}),
@@ -43,4 +43,4 @@ CREATE
   (helen)-[:MARRIED {since: '1970-04-02', status: 'Married'}]->(john), // np. Zielińska -> Nowak
   (mary)-[:MARRIED {since: '1977-04-02', status: 'Married'}]->(peter), // np. Kowalska -> Lewandowska
   (susan)-[:MARRIED {since: '2005-04-02', status: 'Married'}]->(james), // Nowak -> Lewandowska
-  (nancy)-[:MARRIED {since: '2007-04-02', status: 'Married'}]->(robert); // Nowak -> Lewandowska
+  (nancy)-[:MARRIED {since: '2007-04-02', status: 'Married'}]->(robert); // Nowak -> Nowak -> Lewandowska

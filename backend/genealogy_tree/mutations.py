@@ -207,95 +207,45 @@ class DeleteMarriedRelationship(graphene.Mutation):
         return DeleteMarriedRelationship(ok=True)
 
 
-class SetMother(graphene.Mutation):
-    class Arguments:
-        child_id = graphene.ID(required=True)
-        mother_id = graphene.ID(required=True)
-
-    ok = graphene.Boolean()
-
-    def mutate(root, info, child_id, mother_id):
-        session = get_session()
-        with session:
-
-            session.run(
-                """
-                MATCH (child:Person {id: $child_id}), (mother:Person {id: $mother_id})
-                CREATE (mother)-[:PARENT]->(child)
-                """,
-                child_id=child_id,
-                mother_id=mother_id,
-            )
-        return SetMother(ok=True)
-
-
-class UnsetMother(graphene.Mutation):
-    class Arguments:
-        child_id = graphene.ID(required=True)
-
-    ok = graphene.Boolean()
-
-    def mutate(root, info, child_id):
-        session = get_session()
-        with session:
-            session.run(
-                """
-                MATCH (child:Person {id: $child_id})<-[:PARENT]-(mother:Person {gender: 'Female'})
-                DELETE mother-[:PARENT]->(child)
-                """,
-                child_id=child_id,
-            )
-        return UnsetMother(ok=True)
-
-
-class SetFather(graphene.Mutation):
-    class Arguments:
-        child_id = graphene.ID(required=True)
-        father_id = graphene.ID(required=True)
-
-    ok = graphene.Boolean()
-
-    def mutate(root, info, child_id, father_id):
-        session = get_session()
-        with session:
-            session.run(
-                """
-                MATCH (child:Person {id: $child_id}), (father:Person {id: $father_id})
-                CREATE (father)-[:PARENT]->(child)
-                """,
-                child_id=child_id,
-                father_id=father_id,
-            )
-        return SetFather(ok=True)
-
-
-class UnsetFather(graphene.Mutation):
-    class Arguments:
-        child_id = graphene.ID(required=True)
-
-    ok = graphene.Boolean()
-
-    def mutate(root, info, child_id):
-        session = get_session()
-        with session:
-            session.run(
-                """
-                MATCH (child:Person {id: $child_id})<-[:PARENT]-(father:Person {gender: 'Male'})
-                DELETE father-[:PARENT]->(child)
-                """,
-                child_id=child_id,
-            )
-        return UnsetFather(ok=True)
-
-
 class InitializeDatabase(graphene.Mutation):
-    ok = graphene.Boolean()
+    notifications = graphene.List(graphene.String)
+    gql_status = graphene.String()
+    status_description = graphene.String()
+    message = graphene.String()
 
     def mutate(root, info):
         session = get_session()
-        with session:
-            session.run("CALL apoc.cypher.runFile('init.cypher')")
-        return InitializeDatabase(ok=True)
+        try:
+            with session:
+                result = session.run("CALL apoc.cypher.runFile('init.cypher')")
+
+                summary = result.consume()
+                metadata = summary.metadata
+                notifications = summary.notifications
+
+                statuses = metadata.get('statuses')
+                gql_status = statuses[0]['gql_status']
+                status_description = statuses[0]['status_description']
+
+                notification_messages = []
+                if notifications:
+                    notification_messages = [note["description"] for note in notifications]
+
+                message = f"Database initialized completed."
+
+                return InitializeDatabase(
+                    notifications=notification_messages,
+                    gql_status=gql_status,
+                    status_description=status_description,
+                    message=message,
+                )
+        except Exception as e:
+            return InitializeDatabase(
+                notifications=None,
+                gql_status=None,
+                status_description=None,
+                message="Unknown error occured!",
+            )
 
 
 class Mutation(graphene.ObjectType):
@@ -306,6 +256,4 @@ class Mutation(graphene.ObjectType):
     delete_parent_relationship = DeleteParentRelationship.Field()
     create_married_relationship = CreateMarriedRelationship.Field()
     delete_married_relationship = DeleteMarriedRelationship.Field()
-    set_mother = SetMother.Field()
-    set_father = SetFather.Field()
     initialize_database = InitializeDatabase.Field()
