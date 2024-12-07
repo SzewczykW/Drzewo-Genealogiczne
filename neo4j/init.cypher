@@ -1,4 +1,87 @@
 MATCH (n) DETACH DELETE n; 
+
+// Validate if Person has no more than 2 parents.
+CALL apoc.trigger.add(
+  'validateParentLimit',
+  '
+  MATCH (c:Person)<-[r:PARENT]-()
+  WITH c, COUNT(r) AS parentCount
+  WHERE parentCount > 2
+  CALL apoc.util.validate(true, "Person cannot have more than 2 parents", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+// Validate if Person is not a Parent to itself
+CALL apoc.trigger.add(
+  'validateParentSelfRelationship',
+  '
+  MATCH (p:Person)-[r:PARENT]->(p)
+  CALL apoc.util.validate(true, "A person cannot be their own parent", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+// Validate if there is no cyclic Parent relation
+CALL apoc.trigger.add(
+  'validateParentChildCycle',
+  '
+  MATCH (child:Person)-[newRel:PARENT]->(parent:Person)
+  WHERE EXISTS {
+      MATCH path = (parent)-[:PARENT*]->(child)
+      RETURN path
+  }
+  CALL apoc.util.validate(true, "A child cannot be a parent of their own parent", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+// Validate if Person is married to no more than 1 Person and also if there is no cyclic
+// MARRIED relation
+CALL apoc.trigger.add(
+  'validateMarriageLimit',
+  '
+  MATCH (p:Person)-[r:MARRIED]-()
+  WHERE r.status = "Married"
+  WITH p, COUNT(r) AS marriageCount
+  WHERE marriageCount > 1
+  CALL apoc.util.validate(true, "Person cannot have more than 1 active marriage", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+// Validate if Person is not maried to itself
+CALL apoc.trigger.add(
+  'validateMarriageSelfRelationship',
+  '
+  MATCH (p:Person)-[r:MARRIED]->(p)
+  CALL apoc.util.validate(true, "A person cannot be married to themselves", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+// Validate death_date > birth_date
+CALL apoc.trigger.add(
+  'validateBirthBeforeDeath',
+  '
+  MATCH (p:Person)
+  WHERE p.death_date IS NOT NULL AND p.birth_date > p.death_date
+  CALL apoc.util.validate(true, "Birth date must be earlier than death date", [])
+  RETURN NULL
+  ',
+  {phase: "before"}
+);
+
+CREATE CONSTRAINT person_id_unique IF NOT EXISTS
+FOR (p:Person)
+REQUIRE p.id IS UNIQUE;
+
+
 CREATE
   // Nodes
 

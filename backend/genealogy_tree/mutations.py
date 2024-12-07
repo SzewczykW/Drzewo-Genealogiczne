@@ -1,7 +1,9 @@
 import graphene
+import uuid
+
 from .graphql_types import PersonType
 from .neo4j_connection import get_session
-import uuid
+from datetime import datetime
 
 
 class CreatePerson(graphene.Mutation):
@@ -19,6 +21,16 @@ class CreatePerson(graphene.Mutation):
     ):
         person_id = str(uuid.uuid4())
         session = get_session()
+
+        if not gender:
+            gender = "Unknown"
+
+        if not birth_date:
+            birth_date = "Unknown"
+
+        if not death_date:
+            death_date = "NULL"
+
         with session:
             result = session.run(
                 """
@@ -165,13 +177,20 @@ class CreateMarriedRelationship(graphene.Mutation):
     class Arguments:
         person1_id = graphene.ID(required=True)
         person2_id = graphene.ID(required=True)
-        since = graphene.String(required=True)
-        status = graphene.String(required=True)
+        since = graphene.String()
+        status = graphene.String()
 
     ok = graphene.Boolean()
 
-    def mutate(root, info, person1_id, person2_id, since, status):
+    def mutate(root, info, person1_id, person2_id, since=None, status=None):
         session = get_session()
+
+        if not since:
+            since = "Unknown"
+
+        if not status:
+            status = "Unknown"
+
         with session:
             session.run(
                 """
@@ -223,13 +242,15 @@ class InitializeDatabase(graphene.Mutation):
                 metadata = summary.metadata
                 notifications = summary.notifications
 
-                statuses = metadata.get('statuses')
-                gql_status = statuses[0]['gql_status']
-                status_description = statuses[0]['status_description']
+                statuses = metadata.get("statuses")
+                gql_status = statuses[0]["gql_status"]
+                status_description = statuses[0]["status_description"]
 
                 notification_messages = []
                 if notifications:
-                    notification_messages = [note["description"] for note in notifications]
+                    notification_messages = [
+                        note["description"] for note in notifications
+                    ]
 
                 message = f"Database initialized completed."
 
