@@ -11,9 +11,10 @@ class PersonType(graphene.ObjectType):
     gender = graphene.String()
     mother = graphene.Field(lambda: PersonType)
     father = graphene.Field(lambda: PersonType)
-    children = graphene.List(lambda: PersonType)
-    spouse = graphene.Field(lambda: PersonType)
     siblings = graphene.List(lambda: PersonType)
+    current_spouse = graphene.Field(lambda: PersonType)
+    all_marriages = graphene.List(lambda: graphene.JSONString)
+    children = graphene.List(lambda: PersonType)
 
     def resolve_mother(parent, info):
         session = get_session()
@@ -57,12 +58,13 @@ class PersonType(graphene.ObjectType):
             )
             return [PersonType(**record["child"]) for record in result]
 
-    def resolve_spouse(parent, info):
+    def resolve_current_spouse(parent, info):
         session = get_session()
         with session:
             result = session.run(
                 """
-                MATCH (p:Person {id: $id})-[:MARRIED]-(spouse:Person)
+                MATCH (p:Person {id: $id})-[r:MARRIED]-(spouse:Person)
+                WHERE r.status = "Married"
                 RETURN spouse
                 """,
                 id=parent.id,
@@ -71,6 +73,25 @@ class PersonType(graphene.ObjectType):
             if record:
                 return PersonType(**record["spouse"])
             return None
+
+    def resolve_all_marriages(parent, info):
+        session = get_session()
+        with session:
+            result = session.run(
+                """
+                MATCH (p:Person {id: $id})-[r:MARRIED]-(spouse:Person)
+                Return r as marriage_properties, spouse
+                """,
+                id=parent.id,
+            )
+            marriages = [
+                {
+                    "marriage_properties": dict(record["marriage_properties"]),
+                    "spouse": dict(record["spouse"]),
+                }
+                for record in result
+            ]
+            return marriages
 
     def resolve_siblings(parent, info):
         session = get_session()

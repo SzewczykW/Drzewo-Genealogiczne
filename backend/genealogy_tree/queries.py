@@ -12,6 +12,7 @@ class Query(graphene.ObjectType):
     people_alive = graphene.List(PersonType)
     people_dead = graphene.List(PersonType)
     people_alone = graphene.List(PersonType)
+    people_married = graphene.List(PersonType)
 
     person = graphene.Field(
         PersonType,
@@ -36,7 +37,7 @@ class Query(graphene.ObjectType):
                     """,
                     first_name=first_name,
                     last_name=last_name,
-                    birth_date=birth_date,
+                    birth_date=graphene.Date(birth_date),
                 )
             else:
                 raise Exception(
@@ -103,9 +104,20 @@ class Query(graphene.ObjectType):
             result = session.run(
                 """
                 MATCH (p:Person)
-                OPTIONAL MATCH (p)-[m:MARRIED]->()
+                OPTIONAL MATCH (p)-[m:MARRIED]-()
                 WITH p, m
                 WHERE m IS NULL OR m.status IN ['Divorced', 'Widowed']
+                RETURN p
+                """
+            )
+            return [PersonType(**record["p"]) for record in result]
+
+    def resolve_people_married(root, info):
+        session = get_session()
+        with session:
+            result = session.run(
+                """
+                MATCH (p:Person)-[r:MARRIED]-()
                 RETURN p
                 """
             )
