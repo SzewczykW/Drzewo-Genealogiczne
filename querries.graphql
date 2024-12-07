@@ -1,0 +1,111 @@
+# QUERY: Fetch All People
+query FetchAllPeople {
+  allPeople {
+    id
+    firstName
+    lastName
+    birthDate
+    deathDate
+    gender
+  }
+}
+
+# QUERY: Fetch a Specific Person
+query FetchPersonById($id: ID!) {
+  person(id: $id) {
+    id
+    firstName
+    lastName
+    birthDate
+    deathDate
+    gender
+    mother {
+      id
+      firstName
+    }
+    father {
+      id
+      firstName
+    }
+    children {
+      id
+      firstName
+    }
+    siblings {
+      id
+      firstName
+    }
+    currentSpouse {
+      id
+      firstName
+    }
+    allMarriages 
+  }
+}
+
+# QUERY: Fetch All Male People
+query FetchMalePeople {
+  peopleMale {
+    id
+    firstName
+    lastName
+    gender
+  }
+}
+
+# QUERY: Fetch All Female People
+query FetchFemalePeople {
+  peopleFemale {
+    id
+    firstName
+    lastName
+    gender
+  }
+}
+
+# QUERY: Fetch All Alive People
+query FetchAlivePeople {
+  peopleAlive {
+    id
+    firstName
+    lastName
+    birthDate
+    deathDate
+  }
+}
+
+# QUERY: Fetch All Dead People
+query FetchDeadPeople {
+  peopleDead {
+    id
+    firstName
+    lastName
+    birthDate
+    deathDate
+  }
+}
+
+# QUERY: Fetch People Who Are Alone (No Active Marriages or Marriages with status
+# different than "Married" or "Unknown")
+query FetchPeopleAlone {
+  peopleAlone {
+    id
+    firstName
+    lastName
+  }
+}
+
+# QUERY: Fetch People Who Are Married (Marriages with status "Married")
+query FetchPeopleMarried {
+  peopleMarried {
+  	id
+    firstName
+    lastName
+  }
+}
+
+# QUERY: Fetch All Family Trees
+query FetchAllFamilyTrees {
+  allTrees
+}
+

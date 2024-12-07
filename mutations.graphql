@@ -1,0 +1,106 @@
+# MUTATION: Create a New Person
+mutation CreateNewPerson($firstName: String!, $lastName: String!, $birthDate: Date, $deathDate: Date, $gender: String) {
+  createPerson(
+    firstName: $firstName,
+    lastName: $lastName,
+    birthDate: $birthDate,
+    deathDate: $deathDate,
+    gender: $gender
+  ) {
+    person {
+      id
+      firstName
+      lastName
+    }
+  }
+}
+
+# MUTATION: Edit a Person
+mutation EditPersonById($id: ID!, $firstName: String, $lastName: String, $birthDate: Date, $deathDate: Date, $gender: String) {
+  editPerson(
+    id: $id,
+    firstName: $firstName,
+    lastName: $lastName,
+    birthDate: $birthDate,
+    deathDate: $deathDate,
+    gender: $gender
+  ) {
+    person {
+      id
+      firstName
+      lastName
+    }
+  }
+}
+
+# MUTATION: Delete a Person
+mutation DeletePersonById($id: ID!) {
+  deletePerson(id: $id) {
+    ok
+  }
+}
+
+# MUTATION: Create a Parent-Child(Mother) Relationship
+mutation CreateParentMotherChildRelationship($motherId: ID!, $childId: ID!) {
+  createParentRelationship(parentId: $motherId, childId: $childId) {
+    ok
+  }
+}
+
+# MUTATION: Create a Parent-Child(Father) Relationship
+mutation CreateParentFatherChildRelationship($fatherId: ID!, $childId: ID!) {
+  createParentRelationship(parentId: $fatherId, childId: $childId) {
+    ok
+  }
+}
+
+# MUTATION: Delete a Parent-Child(Mother) Relationship
+mutation DeleteParentMotherChildRelationship($motherId: ID!, $childId: ID!) {
+  deleteParentRelationship(parentId: $motherId, childId: $childId) {
+    ok
+  }
+}
+
+# MUTATION: Delete a Parent-Child(Mother) Relationship
+mutation DeleteParentFatherChildRelationship($fatherId: ID!, $childId: ID!) {
+  deleteParentRelationship(parentId: $fatherId, childId: $childId) {
+    ok
+  }
+}
+
+# MUTATION: Create a Married Relationship
+mutation CreateMarriedRelationshipBetweenPeople($person1Id: ID!, $person2Id: ID!, $since: Date, $status: String) {
+  createMarriedRelationship(
+    person1Id: $person1Id,
+    person2Id: $person2Id,
+    since: $since,
+    status: $status
+  ) {
+    ok
+  }
+}
+
+# MUTATION: Delete a Married Relationship
+mutation DeleteMarriedRelationshipBetweenPeople($person1Id: ID!, $person2Id: ID!) {
+  deleteMarriedRelationship(person1Id: $person1Id, person2Id: $person2Id) {
+    ok
+  }
+}
+
+# MUTATION: Update the Status of a Married Relationship
+mutation UpdateMarriedRelationshipStatus($person1Id: ID!, $person2Id: ID!, $status: String!) {
+  updateMarriedStatus(person1Id: $person1Id, person2Id: $person2Id, status: $status) {
+    ok
+  }
+}
+
+# MUTATION: Initialize the Database
+mutation InitializeDatabase {
+  initializeDatabase {
+    notifications
+    gqlStatus
+    statusDescription
+    message
+  }
+}
+

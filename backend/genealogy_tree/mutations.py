@@ -10,8 +10,8 @@ class CreatePerson(graphene.Mutation):
     class Arguments:
         first_name = graphene.String(required=True)
         last_name = graphene.String(required=True)
-        birth_date = graphene.String()
-        death_date = graphene.String()
+        birth_date = graphene.Date()
+        death_date = graphene.Date()
         gender = graphene.String()
 
     person = graphene.Field(PersonType)
@@ -60,8 +60,8 @@ class EditPerson(graphene.Mutation):
         id = graphene.ID(required=True)
         first_name = graphene.String()
         last_name = graphene.String()
-        birth_date = graphene.String()
-        death_date = graphene.String()
+        birth_date = graphene.Date()
+        death_date = graphene.Date()
         gender = graphene.String()
 
     person = graphene.Field(PersonType)
@@ -177,7 +177,7 @@ class CreateMarriedRelationship(graphene.Mutation):
     class Arguments:
         person1_id = graphene.ID(required=True)
         person2_id = graphene.ID(required=True)
-        since = graphene.String()
+        since = graphene.Date()
         status = graphene.String()
 
     ok = graphene.Boolean()
@@ -203,6 +203,34 @@ class CreateMarriedRelationship(graphene.Mutation):
                 status=status,
             )
         return CreateMarriedRelationship(ok=True)
+
+
+class UpdateMarriedStatus(graphene.Mutation):
+    class Arguments:
+        person1_id = graphene.ID(required=True)
+        person2_id = graphene.ID(required=True)
+        status = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+
+    def mutate(root, info, person1_id, person2_id, status):
+        statuses = ["Widowed", "Divorced", "Married", "Unknown"]
+        if status not in statuses:
+            raise Exception(f"Invalid status. Allowed ones are {statuses}.")
+
+        session = get_session()
+        with session:
+            result = session.run(
+                """
+                MATCH (p1:Person {id: $person1_id})-[r:MARRIED]->(p2:Person {id: $person2_id})
+                SET r.status = $status
+                RETURN r
+                """,
+                person1_id=person1_id,
+                person2_id=person2_id,
+                status=status,
+            )
+        return UpdateMarriedStatus(ok=True)
 
 
 class DeleteMarriedRelationship(graphene.Mutation):
@@ -276,5 +304,6 @@ class Mutation(graphene.ObjectType):
     create_parent_relationship = CreateParentRelationship.Field()
     delete_parent_relationship = DeleteParentRelationship.Field()
     create_married_relationship = CreateMarriedRelationship.Field()
+    update_married_status = UpdateMarriedStatus.Field()
     delete_married_relationship = DeleteMarriedRelationship.Field()
     initialize_database = InitializeDatabase.Field()
